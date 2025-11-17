@@ -3,7 +3,11 @@ package com.writethrough.order.model;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -14,48 +18,44 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
+@EntityListeners(AuditingEntityListener.class) // Enable JPA auditing for this entity
 public class Order implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
+    @NotBlank(message = "Customer name is required")
     @Column(nullable = false)
     private String customerName;
 
-    @NotBlank
+    @NotBlank(message = "Product name is required")
     @Column(nullable = false)
     private String product;
 
-    @NotNull
-    @Positive
+    @NotNull(message = "Quantity cannot be null")
+    @Positive(message = "Quantity must be greater than zero")
+    @Column(nullable = false)
     private Integer quantity;
 
-    @NotNull
-    @DecimalMin("0.0")
+    @NotNull(message = "Price cannot be null")
+    @DecimalMin(value = "0.0", inclusive = false, message = "Price must be positive")
+    @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal price;
 
-    private String status;
+    @Builder.Default
+    @Column(nullable = false)
+    private String status = "PENDING";
 
-    @Column(updatable = false)
+    @CreatedDate
+    @Column(updatable = false, nullable = false)
     private LocalDateTime createdAt;
 
+    @LastModifiedDate
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        if (this.createdAt == null) this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
 }
